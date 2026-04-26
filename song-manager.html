@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>楽曲データベース管理</title>
+    <style>
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; padding: 20px; background: #f4f7f6; color: #333; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 600px; margin: 0 auto; }
+        h2 { border-bottom: 2px solid #4a90e2; padding-bottom: 10px; margin-top: 0; color: #4a90e2; }
+        
+        /* 追加フォームは常に表示 */
+        .input-group { background: #eef5ff; padding: 15px; border-radius: 8px; border: 1px solid #cfe2ff; margin-bottom: 20px; }
+        
+        input, select { padding: 10px; margin: 8px 0; width: 100%; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        .btn-add { padding: 12px; background: #4a90e2; color: white; border: none; cursor: pointer; width: 100%; font-weight: bold; border-radius: 4px; font-size: 16px; }
+        .btn-add:hover { background: #357abd; }
+
+        .song-item { border-bottom: 1px solid #eee; padding: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .song-info { display: flex; flex-direction: column; }
+        .song-high { font-size: 13px; color: #ff4d4d; font-weight: bold; margin-top: 4px; }
+        
+        /* 削除ボタンはデフォルト非表示 */
+        .del-btn { background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; display: none; font-size: 12px; }
+        
+        .admin-footer { text-align: right; margin-top: 30px; font-size: 11px; }
+        .admin-link { color: #ccc; cursor: pointer; text-decoration: none; }
+        .admin-link:hover { color: #888; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>楽曲追加フォーム</h2>
+        <div class="input-group">
+            <input type="text" id="songTitle" placeholder="曲名（例：Lemon）">
+            <input type="text" id="songArtist" placeholder="アーティスト名">
+            <label style="font-size: 12px; font-weight: bold;">最高音を選択:</label>
+            <select id="songHigh"></select>
+            <button class="btn-add" onclick="addSong()">データベースに追加</button>
+        </div>
+
+        <h3>登録済みリスト</h3>
+        <div id="songList"></div>
+
+        <div class="admin-footer">
+            <span id="statusLabel"></span>
+            <span class="admin-link" id="authBtn" onclick="handleAuth()">●</span>
+        </div>
+    </div>
+
+    <script>
+        const ADMIN_PW = "1234";
+        let isAdmin = false;
+
+        const noteNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+        const highSelect = document.getElementById('songHigh');
+        
+        // 音域選択肢の生成
+        [4,5,6,7].forEach(oct => {
+            noteNames.forEach(name => {
+                if(oct === 7 && noteNames.indexOf(name) > 4) return;
+                let opt = document.createElement('option');
+                opt.value = name + oct;
+                opt.textContent = name + oct;
+                highSelect.appendChild(opt);
+            });
+        });
+
+        // 削除用：管理者認証
+        function handleAuth() {
+            const pw = prompt("管理者パスワードを入力してください（削除機能の開放）:");
+            if (pw === ADMIN_PW) {
+                isAdmin = true;
+                document.getElementById('statusLabel').innerText = "管理者モード実行中";
+                loadSongs();
+            } else {
+                alert("パスワードが違います");
+            }
+        }
+
+        function loadSongs() {
+            const songs = JSON.parse(localStorage.getItem('mySongDatabase') || '[]');
+            const list = document.getElementById('songList');
+            
+            list.innerHTML = songs.length ? songs.map((s, i) => `
+                <div class="song-item">
+                    <div class="song-info">
+                        <strong style="font-size:16px;">${s.title}</strong>
+                        <span style="font-size:13px; color:#666;">${s.artist}</span>
+                        <span class="song-high">最高音: ${s.high}</span>
+                    </div>
+                    <button class="del-btn" style="display: ${isAdmin ? 'block' : 'none'}" onclick="deleteSong(${i})">削除</button>
+                </div>
+            `).join('') : '<p style="color:#999; text-align:center;">曲が登録されていません</p>';
+        }
+
+        function addSong() {
+            const title = document.getElementById('songTitle').value.trim();
+            const artist = document.getElementById('songArtist').value.trim();
+            const high = document.getElementById('songHigh').value;
+            
+            if(!title) {
+                alert("曲名を入力してください");
+                return;
+            }
+
+            const songs = JSON.parse(localStorage.getItem('mySongDatabase') || '[]');
+            songs.push({ title, artist, high });
+            localStorage.setItem('mySongDatabase', JSON.stringify(songs));
+            
+            // 入力欄をリセット
+            document.getElementById('songTitle').value = '';
+            document.getElementById('songArtist').value = '';
+            
+            alert("「" + title + "」を追加しました！");
+            loadSongs();
+        }
+
+        function deleteSong(i) {
+            if (confirm("この曲を削除してもよろしいですか？")) {
+                const songs = JSON.parse(localStorage.getItem('mySongDatabase') || '[]');
+                songs.splice(i, 1);
+                localStorage.setItem('mySongDatabase', JSON.stringify(songs));
+                loadSongs();
+            }
+        }
+
+        window.onload = loadSongs;
+    </script>
+</body>
+</html>

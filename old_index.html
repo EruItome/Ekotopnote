@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>音域調査シミュレーター Pro + Song Search</title>
+    <style>
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #f0f2f5; padding: 20px; color: #333; margin-bottom: 150px; }
+        .container { max-width: 1300px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #444; }
+
+        .input-panel { background: #fafafa; border: 1px solid #ddd; padding: 20px; border-radius: 8px; margin-bottom: 30px; }
+        .input-row { display: grid; grid-template-columns: 200px 1fr 1fr; gap: 15px; align-items: center; margin-bottom: 10px; }
+        .input-row label { font-weight: bold; padding: 8px; border-radius: 4px; color: #fff; text-align: center; }
+        select, input[type="text"] { padding: 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 14px; width: 100%; box-sizing: border-box; }
+
+        .btn-submit { display: block; width: 240px; margin: 20px auto; padding: 12px; background: #4a90e2; color: #fff; border: none; border-radius: 25px; font-size: 16px; cursor: pointer; font-weight: bold; }
+        
+        .admin-controls { background: #fff3f3; border: 1px dashed #ffadad; padding: 15px; margin-bottom: 20px; border-radius: 8px; display: none; }
+        .del-btn { background: #ff4d4d; color: white; border: none; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; }
+
+        .tabs { display: flex; gap: 5px; margin-top: 20px; }
+        .tab-btn { padding: 10px 20px; cursor: pointer; border: none; background: #ddd; border-radius: 8px 8px 0 0; }
+        .tab-btn.active { background: #fff; font-weight: bold; border: 1px solid #ccc; border-bottom: none; }
+        .tab-content { display: none; background: #fff; padding: 20px; border: 1px solid #ccc; border-radius: 0 8px 8px 8px; overflow-x: auto; }
+        .tab-content.active { display: block; }
+
+        table { border-collapse: collapse; width: 100%; min-width: 1100px; table-layout: fixed; }
+        th, td { border: 1px solid #ddd; height: 35px; text-align: center; padding: 0; }
+        
+        /* ヘッダーの重なり順とクリック設定を強化 */
+        th { background: #f8f8f8; font-size: 10px; position: relative; z-index: 2; }
+        th.clickable-note { 
+            cursor: pointer !important; 
+            color: #4a90e2; 
+            text-decoration: underline; 
+            pointer-events: auto !important; 
+        }
+        th.clickable-note:hover { background-color: #eef5ff; color: #ff4d4d; }
+
+        .name-col { width: 130px; background: #fff; font-weight: bold; position: sticky; left: 0; z-index: 10; border-right: 2px solid #ddd; }
+        .stat-col { width: 100px; background: #fdfdfd; font-size: 12px; border-left: 2px solid #ddd; }
+        th.octave-start, td.octave-start { border-left: 3px solid #444; }
+
+        /* 曲リスト表示パネル */
+        #song-list-panel { 
+            position: fixed; bottom: 0; left: 0; width: 100%; 
+            background: #222; color: white; padding: 20px; 
+            display: none; box-shadow: 0 -4px 15px rgba(0,0,0,0.5); z-index: 9999;
+        }
+        .close-btn { background: #666; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; float: right; }
+
+        .range-bar-0 { background-color: #00AEEF; }
+        .range-bar-1 { background-color: #8CC63F; }
+        .range-bar-2 { background-color: #FBB03B; }
+        .range-bar-3 { background-color: #FF0000; }
+        .range-bar-4 { background-color: #662D91; }
+        .bg-blue { background-color: #00AEEF; }
+        .bg-green { background-color: #8CC63F; }
+        .bg-orange { background-color: #FBB03B; }
+        .bg-red { background-color: #FF0000; }
+        .bg-purple { background-color: #662D91; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>音域調査シミュレーター (Analytics版)</h2>
+
+    <div style="text-align: right; margin-bottom: 10px; font-size: 12px;">
+        <span id="adminStatus">一般モード</span> | 
+        <a href="#" onclick="toggleAdminPrompt()" style="color: #666;">管理者用</a>
+    </div>
+
+    <div id="adminPanel" class="admin-controls">
+        <strong>管理者モード</strong> | 削除が可能です。
+        <button onclick="logoutAdmin()" style="float: right;">ログアウト</button>
+    </div>
+
+    <div class="input-panel">
+        <div class="input-row" style="margin-bottom: 20px;">
+            <label style="background: #666; color: #fff;">ユーザー名</label>
+            <input type="text" id="userName" placeholder="名前を入力">
+        </div>
+        <div id="formFields"></div>
+        <button class="btn-submit" onclick="addUser()">結果に追加・上書き</button>
+    </div>
+
+    <p style="font-size: 14px; color: #d00; font-weight: bold;">【ヒント】青文字の音名（C4など）をクリックすると登録曲を表示します</p>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="showTab('user-view', this)">ユーザー一覧</button>
+        <button class="tab-btn" onclick="showTab('color-view', this)">音域別（色別）比較</button>
+    </div>
+
+    <div id="user-view" class="tab-content active"></div>
+    <div id="color-view" class="tab-content"></div>
+</div>
+
+<div id="song-list-panel">
+    <button class="close-btn" onclick="document.getElementById('song-list-panel').style.display='none'">閉じる</button>
+    <div id="song-content" style="max-width: 1200px; margin: 0 auto;"></div>
+</div>
+
+<script>
+    const noteNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+    const octaves = [4, 5, 6, 7];
+    const notes = [];
+    octaves.forEach(oct => {
+        noteNames.forEach(name => {
+            if (oct === 7 && noteNames.indexOf(name) > 4) return;
+            notes.push({ name: name + oct, isC: name === "C" });
+        });
+    });
+
+    const criteria = [
+        { label: "寝起き", color: "bg-blue", low: "C4", high: "G5" },
+        { label: "普通", color: "bg-green", low: "C4", high: "A5" },
+        { label: "きつい", color: "bg-orange", low: "C4", high: "C6" },
+        { label: "稀に出る", color: "bg-red", low: "C4", high: "D6" },
+        { label: "がちうんげー", color: "bg-purple", low: "C4", high: "E6" }
+    ];
+
+    let allUsers = [];
+    let isAdmin = false;
+    const ADMIN_PW = "1234";
+
+    function showSongs(note) {
+        const songDatabase = JSON.parse(localStorage.getItem('mySongDatabase') || '[]');
+        const panel = document.getElementById('song-list-panel');
+        const content = document.getElementById('song-content');
+        
+        const matchingSongs = songDatabase.filter(s => s.high === note);
+        
+        if (matchingSongs.length > 0) {
+            content.innerHTML = `<h3 style="margin:0 0 15px 0; border-bottom:1px solid #555; padding-bottom:10px;">最高音が ${note} の登録曲</h3>` +
+                `<div style="display: flex; flex-wrap: wrap; gap: 10px;">` +
+                matchingSongs.map(s => `<div style="background:#444; padding:10px 20px; border-radius:6px; border:1px solid #666;"><strong>${s.title}</strong><br><span style="font-size:12px; color:#bbb;">${s.artist}</span></div>`).join('') +
+                `</div>`;
+            panel.style.display = 'block';
+        } else {
+            alert(note + " が最高音の曲はまだ「楽曲管理」から登録されていません。");
+        }
+    }
+
+    const formFields = document.getElementById('formFields');
+    criteria.forEach((c, i) => {
+        const row = document.createElement('div');
+        row.className = 'input-row';
+        row.innerHTML = `
+            <label class="${c.color}">${c.label}</label>
+            <select id="low-${i}">${notes.map(n => `<option value="${n.name}" ${n.name === c.low ? 'selected' : ''}>${n.name}</option>`).join('')}</select>
+            <select id="high-${i}">${notes.map(n => `<option value="${n.name}" ${n.name === c.high ? 'selected' : ''}>${n.name}</option>`).join('')}</select>
+        `;
+        formFields.appendChild(row);
+    });
+
+    window.onload = () => {
+        const savedData = localStorage.getItem('vocalRangeData');
+        if (savedData) { allUsers = JSON.parse(savedData); renderAll(); }
+    };
+
+    function toggleAdminPrompt() {
+        const pw = prompt("Password:");
+        if (pw === ADMIN_PW) {
+            isAdmin = true;
+            document.getElementById('adminPanel').style.display = 'block';
+            document.getElementById('adminStatus').innerText = '管理者モード';
+            renderAll();
+        }
+    }
+
+    function logoutAdmin() {
+        isAdmin = false;
+        document.getElementById('adminPanel').style.display = 'none';
+        document.getElementById('adminStatus').innerText = '一般モード';
+        renderAll();
+    }
+
+    function deleteUser(index) {
+        if (confirm("削除しますか？")) {
+            allUsers.splice(index, 1);
+            localStorage.setItem('vocalRangeData', JSON.stringify(allUsers));
+            renderAll();
+        }
+    }
+
+    function showTab(id, btn) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        btn.classList.add('active');
+    }
+
+    function calculateRangeText(startIdx, endIdx) {
+        const totalNotes = endIdx - startIdx + 1;
+        const diff = endIdx - startIdx;
+        const oct = Math.floor(diff / 12);
+        const notesLeft = (diff % 12) + 1;
+        let text = (oct > 0) ? `${oct}oct ${notesLeft > 0 ? notesLeft + '音' : ''}` : `${totalNotes}音`;
+        return { text, total: totalNotes };
+    }
+
+    function addUser() {
+        const name = document.getElementById('userName').value.trim();
+        if (!name) return;
+        const ranges = [];
+        for (let i = 0; i < 5; i++) {
+            const lowIdx = notes.findIndex(n => n.name === document.getElementById(`low-${i}`).value);
+            const highIdx = notes.findIndex(n => n.name === document.getElementById(`high-${i}`).value);
+            ranges.push({ start: Math.min(lowIdx, highIdx), end: Math.max(lowIdx, highIdx) });
+        }
+        const existingIndex = allUsers.findIndex(u => u.name === name);
+        if (existingIndex !== -1) allUsers[existingIndex] = { name, ranges };
+        else allUsers.push({ name, ranges });
+        localStorage.setItem('vocalRangeData', JSON.stringify(allUsers));
+        renderAll();
+    }
+
+    function createTableHeader(includeStat = true) {
+        let html = `<thead><tr><th class="name-col">名前</th>`;
+        notes.forEach(n => {
+            const cls = (n.isC ? 'octave-start ' : '') + 'clickable-note';
+            // 確実にグローバルな showSongs を呼ぶように記述
+            html += `<th class="${cls}" onclick="window.showSongs('${n.name}')">${n.name}</th>`;
+        });
+        if (includeStat) html += `<th class="stat-col">音域幅</th>`;
+        html += `</tr></thead>`;
+        return html;
+    }
+
+    function renderAll() {
+        if (allUsers.length === 0) return;
+
+        let userHtml = `<table>${createTableHeader()}<tbody>`;
+        allUsers.forEach((user, uIdx) => {
+            user.ranges.forEach((r, i) => {
+                const rangeInfo = calculateRangeText(r.start, r.end);
+                const totalDisplay = rangeInfo.total >= 12 ? `<br>(${rangeInfo.total}音)` : "";
+                userHtml += `<tr>`;
+                if (i === 0) {
+                    let delBtn = isAdmin ? `<br><button class="del-btn" onclick="deleteUser(${uIdx})">削除</button>` : '';
+                    userHtml += `<td class="name-col" rowspan="5">${user.name}${delBtn}</td>`;
+                }
+                notes.forEach((n, idx) => {
+                    const inRange = idx >= r.start && idx <= r.end;
+                    userHtml += `<td class="${(n.isC ? 'octave-start ' : '') + (inRange ? 'range-bar-' + i : '')}"></td>`;
+                });
+                userHtml += `<td class="stat-col">${rangeInfo.text}${totalDisplay}</td>`;
+                userHtml += `</tr>`;
+            });
+        });
+        userHtml += `</tbody></table>`;
+        document.getElementById('user-view').innerHTML = userHtml;
+
+        let colorHtml = "";
+        criteria.forEach((c, i) => {
+            colorHtml += `<h3>${c.label}</h3><table>${createTableHeader()}<tbody>`;
+            allUsers.forEach((user) => {
+                const r = user.ranges[i];
+                const rangeInfo = calculateRangeText(r.start, r.end);
+                const totalDisplay = rangeInfo.total >= 12 ? ` (${rangeInfo.total}音)` : "";
+                colorHtml += `<tr><td class="name-col">${user.name}</td>`;
+                notes.forEach((n, idx) => {
+                    const inRange = idx >= r.start && idx <= r.end;
+                    colorHtml += `<td class="${(n.isC ? 'octave-start ' : '') + (inRange ? 'range-bar-' + i : '')}"></td>`;
+                });
+                colorHtml += `<td class="stat-col">${rangeInfo.text}${totalDisplay}</td>`;
+                colorHtml += `</tr>`;
+            });
+            colorHtml += `</tbody></table><br>`;
+        });
+        document.getElementById('color-view').innerHTML = colorHtml;
+    }
+</script>
+</body>
+</html>

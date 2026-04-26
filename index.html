@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>音域管理システム - Portal</title>
+    <style>
+        /* 全体のレイアウト設定 */
+        body { 
+            font-family: 'Helvetica Neue', Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", sans-serif; 
+            background: #f0f2f5; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            min-height: 100vh; 
+            margin: 0; 
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* 中央の白いカード */
+        .menu-container { 
+            background: white; 
+            padding: 40px 30px; 
+            border-radius: 24px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08); 
+            text-align: center; 
+            max-width: 450px; 
+            width: 100%; 
+            box-sizing: border-box; /* パディングが外にはみ出さないように設定 */
+        }
+
+        h1 { 
+            color: #333; 
+            margin-bottom: 35px; 
+            font-size: 26px; 
+            letter-spacing: 1px;
+        }
+
+        /* ボタンの共通設定 */
+        .menu-btn { 
+            display: block; 
+            width: 100%; 
+            padding: 20px; 
+            margin: 10px 0; 
+            font-size: 18px; 
+            font-weight: bold; 
+            text-decoration: none; 
+            border-radius: 16px; 
+            transition: all 0.3s ease; 
+            cursor: pointer; 
+            border: none; 
+            box-sizing: border-box;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        /* 青いボタン：シミュレーター */
+        .btn-main { 
+            background: #4a90e2; 
+            color: white; 
+        }
+        .btn-main:hover { 
+            background: #357abd; 
+            transform: translateY(-3px); 
+            box-shadow: 0 6px 12px rgba(74, 144, 226, 0.3);
+        }
+
+        /* 緑のボタン：データベース */
+        .btn-sub { 
+            background: #28a745; 
+            color: white; 
+        }
+        .btn-sub:hover { 
+            background: #218838; 
+            transform: translateY(-3px); 
+            box-shadow: 0 6px 12px rgba(40, 167, 69, 0.3);
+        }
+
+        /* 説明文のスタイル */
+        .desc { 
+            font-size: 14px; 
+            color: #888; 
+            margin-top: 5px;
+            margin-bottom: 25px; 
+        }
+
+        /* 最後に並ぶボタンの下の説明文はマージンを調整 */
+        .last-desc {
+            margin-bottom: 0;
+        }
+
+        /* スマホ向けの微調整 */
+        @media (max-width: 480px) {
+            .menu-container {
+                padding: 30px 20px;
+            }
+            h1 {
+                font-size: 22px;
+            }
+            .menu-btn {
+                padding: 16px;
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="menu-container">
+        <h1>音域管理システム</h1>
+        
+        <a href="old_index.html" class="menu-btn btn-main">音域調査シミュレーター</a>
+        <p class="desc">みんなの音域を比較・分析します</p>
+
+        <a href="song-manager.html" class="menu-btn btn-sub">楽曲データベース管理</a>
+        <p class="desc last-desc">最高音ごとの曲を追加・編集します</p>
+    </div>
+
+</body>
+</html>
